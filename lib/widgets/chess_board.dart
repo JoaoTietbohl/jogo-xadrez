@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../logic/chess_logic.dart';
-import '../logic/turn_manager.dart'; // certifique-se de que o caminho está correto
+import '../logic/turn_manager.dart';
+import '../logic/check.dart'; // Importação da verificação de cheque
 
 class ChessBoard extends StatefulWidget {
   const ChessBoard({super.key});
@@ -38,15 +39,35 @@ class _ChessBoardState extends State<ChessBoard> {
     bool moved = logic.handleTap(row, col, turnManager.isWhiteTurn);
     if (moved) {
       turnManager.switchTurn();
+
+      // Verifica se algum rei está em cheque
+      final checkStatus = checkKingsStatus(logic.board);
+      if (checkStatus['white'] == true) {
+        showCheckAlert(context, "⚠️ O rei branco está em cheque!");
+      }
+      if (checkStatus['black'] == true) {
+        showCheckAlert(context, "⚠️ O rei preto está em cheque!");
+      }
     }
+
     setState(() {});
+  }
+
+  void showCheckAlert(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontSize: 18)),
+        backgroundColor: Colors.redAccent,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Cronômetro
+        // Cronômetro e status do turno
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
@@ -67,6 +88,7 @@ class _ChessBoardState extends State<ChessBoard> {
             ],
           ),
         ),
+
         // Tabuleiro
         Expanded(
           child: GridView.builder(

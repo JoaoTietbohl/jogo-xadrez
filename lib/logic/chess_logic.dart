@@ -1,14 +1,15 @@
 class ChessLogic {
-  List<List<String>> board = [
-    ['🏰', '🐎', '🎩', '👸', '♚', '🎩', '🐎', '🏰'], // pretas
-    ['🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️'], // peões pretos
-    ['-', '-', '-', '-', '-', '-', '-', '-'],
-    ['-', '-', '-', '-', '-', '-', '-', '-'],
-    ['-', '-', '-', '-', '-', '-', '-', '-'],
-    ['-', '-', '-', '-', '-', '-', '-', '-'],
-    ['⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️'], // peões brancos
-    ['🏰', '🐎', '🎩', '👸', '♔', '🎩', '🐎', '🏰'], // brancas
-  ];
+ List<List<String>> board = [
+  ['🏯', '🐴', '🎓', '🤴', '♚', '🎓', '🐴', '🏯'], // pretas
+  ['🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️'],
+  ['-', '-', '-', '-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-', '-', '-', '-'],
+  ['-', '-', '-', '-', '-', '-', '-', '-'],
+  ['⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️'],
+  ['🏰', '🐎', '🎩', '👸', '♔', '🎩', '🐎', '🏰'], // brancas
+];
+
 
   List<List<bool>> validMoves = List.generate(8, (_) => List.filled(8, false));
   int? selectedRow;
@@ -47,14 +48,14 @@ class ChessLogic {
   }
 
   /// Verifica se uma peça é branca
-  bool isWhitePiece(String piece) {
-    return ['⚔️', '🏰', '🐎', '🎩', '👸', '♔'].contains(piece);
-  }
+ bool isWhitePiece(String piece) {
+  return ['⚔️', '🏰', '🐎', '🎩', '👸', '♔'].contains(piece);
+}
 
-  /// Verifica se uma peça é preta
-  bool isBlackPiece(String piece) {
-    return ['🛡️', '🏰', '🐎', '🎩', '👸', '♚'].contains(piece);
-  }
+bool isBlackPiece(String piece) {
+  return ['🛡️', '🏯', '🐴', '🎓', '🤴', '♚'].contains(piece);
+}
+
 
   /// Verifica se posição está dentro do tabuleiro
   bool inBounds(int row, int col) {
@@ -78,8 +79,8 @@ class ChessLogic {
       return false;
     }
 
-    // Torre (🏰)
-    if (piece == '🏰') {
+    // Torre 
+    if (piece == '🏰' || piece == '🏯') {
       for (int r = row - 1; r >= 0; r--) {
         if (board[r][col] == '-') {
           validMoves[r][col] = true;
@@ -115,7 +116,7 @@ class ChessLogic {
     }
 
     // Cavalo (🐎)
-    if (piece == '🐎') {
+    if (piece == '🐎' || piece == '🐴') {
       List<List<int>> moves = [
         [row - 2, col - 1],
         [row - 2, col + 1],
@@ -135,7 +136,7 @@ class ChessLogic {
     }
 
     // Bispo (🎩)
-    if (piece == '🎩') {
+    if (piece == '🎩' || piece == '🎓') {
       for (int i = 1; row - i >= 0 && col + i < 8; i++) {
         if (board[row - i][col + i] == '-') {
           validMoves[row - i][col + i] = true;
@@ -171,7 +172,7 @@ class ChessLogic {
     }
 
     // Rainha (👸)
-    if (piece == '👸') {
+    if (piece == '👸' || piece == '🤴') {
       for (int r = row - 1; r >= 0; r--) {
         if (board[r][col] == '-') {
           validMoves[r][col] = true;
