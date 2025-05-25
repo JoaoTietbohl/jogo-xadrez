@@ -15,23 +15,31 @@ class ChessLogic {
   int? selectedCol;
 
   /// Trata o clique do usuário no tabuleiro
-  void handleTap(int row, int col) {
-    if (selectedRow == null) {
-      if (board[row][col] != '-') {
-        selectedRow = row;
-        selectedCol = col;
-        calculateValidMoves(row, col);
-      }
+  bool handleTap(int row, int col, bool isWhiteTurn) {
+  if (selectedRow == null) {
+    if (board[row][col] != '-' &&
+        ((isWhiteTurn && isWhitePiece(board[row][col])) ||
+         (!isWhiteTurn && isBlackPiece(board[row][col])))) {
+      selectedRow = row;
+      selectedCol = col;
+      calculateValidMoves(row, col);
+    }
+  } else {
+    if (validMoves[row][col]) {
+      board[row][col] = board[selectedRow!][selectedCol!];
+      board[selectedRow!][selectedCol!] = '-';
+      selectedRow = null;
+      selectedCol = null;
+      validMoves = List.generate(8, (_) => List.filled(8, false));
+      return true; // jogada feita
     } else {
-      if (validMoves[row][col]) {
-        board[row][col] = board[selectedRow!][selectedCol!];
-        board[selectedRow!][selectedCol!] = '-';
-      }
       selectedRow = null;
       selectedCol = null;
       validMoves = List.generate(8, (_) => List.filled(8, false));
     }
   }
+  return false; // nenhuma jogada feita
+}
 
   /// Verifica se a peça está selecionada
   bool isSelected(int row, int col) {
@@ -40,7 +48,6 @@ class ChessLogic {
 
   /// Verifica se uma peça é branca
   bool isWhitePiece(String piece) {
-    // Definido por emojis que aparecem nas linhas 6 e 7
     return ['⚔️', '🏰', '🐎', '🎩', '👸', '♔'].contains(piece);
   }
 
@@ -62,21 +69,17 @@ class ChessLogic {
     bool isWhite = isWhitePiece(piece);
     bool isBlack = isBlackPiece(piece);
 
-    // Função para verificar se pode se mover para uma casa
     bool canMoveTo(int r, int c) {
       if (!inBounds(r, c)) return false;
       String target = board[r][c];
       if (target == '-') return true;
-      if (isWhite && isBlackPiece(target)) return true; // captura
-      if (isBlack && isWhitePiece(target)) return true; // captura
+      if (isWhite && isBlackPiece(target)) return true;
+      if (isBlack && isWhitePiece(target)) return true;
       return false;
     }
 
     // Torre (🏰)
     if (piece == '🏰') {
-      // Torre branca ou preta (mesmo emoji)
-      // mov vertical e horizontal até bloqueio
-      // sobe
       for (int r = row - 1; r >= 0; r--) {
         if (board[r][col] == '-') {
           validMoves[r][col] = true;
@@ -85,7 +88,6 @@ class ChessLogic {
           break;
         }
       }
-      // desce
       for (int r = row + 1; r < 8; r++) {
         if (board[r][col] == '-') {
           validMoves[r][col] = true;
@@ -94,7 +96,6 @@ class ChessLogic {
           break;
         }
       }
-      // esquerda
       for (int c = col - 1; c >= 0; c--) {
         if (board[row][c] == '-') {
           validMoves[row][c] = true;
@@ -103,7 +104,6 @@ class ChessLogic {
           break;
         }
       }
-      // direita
       for (int c = col + 1; c < 8; c++) {
         if (board[row][c] == '-') {
           validMoves[row][c] = true;
@@ -136,8 +136,6 @@ class ChessLogic {
 
     // Bispo (🎩)
     if (piece == '🎩') {
-      // diagonais
-      // NE
       for (int i = 1; row - i >= 0 && col + i < 8; i++) {
         if (board[row - i][col + i] == '-') {
           validMoves[row - i][col + i] = true;
@@ -146,7 +144,6 @@ class ChessLogic {
           break;
         }
       }
-      // NW
       for (int i = 1; row - i >= 0 && col - i >= 0; i++) {
         if (board[row - i][col - i] == '-') {
           validMoves[row - i][col - i] = true;
@@ -155,7 +152,6 @@ class ChessLogic {
           break;
         }
       }
-      // SE
       for (int i = 1; row + i < 8 && col + i < 8; i++) {
         if (board[row + i][col + i] == '-') {
           validMoves[row + i][col + i] = true;
@@ -164,7 +160,6 @@ class ChessLogic {
           break;
         }
       }
-      // SW
       for (int i = 1; row + i < 8 && col - i >= 0; i++) {
         if (board[row + i][col - i] == '-') {
           validMoves[row + i][col - i] = true;
@@ -177,9 +172,6 @@ class ChessLogic {
 
     // Rainha (👸)
     if (piece == '👸') {
-      // combina movimentos de torre e bispo
-
-      // Torre-like
       for (int r = row - 1; r >= 0; r--) {
         if (board[r][col] == '-') {
           validMoves[r][col] = true;
@@ -212,8 +204,6 @@ class ChessLogic {
           break;
         }
       }
-
-      // Bispo-like
       for (int i = 1; row - i >= 0 && col + i < 8; i++) {
         if (board[row - i][col + i] == '-') {
           validMoves[row - i][col + i] = true;
@@ -248,7 +238,7 @@ class ChessLogic {
       }
     }
 
-    // Rei branco (♔) e rei preto (♚)
+    // Rei
     if (piece == '♔' || piece == '♚') {
       List<List<int>> moves = [
         [row - 1, col - 1],
@@ -273,21 +263,15 @@ class ChessLogic {
       int forwardRow = row + 1;
       if (inBounds(forwardRow, col) && board[forwardRow][col] == '-') {
         validMoves[forwardRow][col] = true;
-
-        // Se estiver na linha inicial, pode andar 2 casas
         if (row == 1 && board[row + 2][col] == '-') {
           validMoves[row + 2][col] = true;
         }
       }
-
-      // Captura diagonal esquerda
       if (inBounds(forwardRow, col - 1) &&
           board[forwardRow][col - 1] != '-' &&
           isWhitePiece(board[forwardRow][col - 1])) {
         validMoves[forwardRow][col - 1] = true;
       }
-
-      // Captura diagonal direita
       if (inBounds(forwardRow, col + 1) &&
           board[forwardRow][col + 1] != '-' &&
           isWhitePiece(board[forwardRow][col + 1])) {
@@ -300,21 +284,15 @@ class ChessLogic {
       int forwardRow = row - 1;
       if (inBounds(forwardRow, col) && board[forwardRow][col] == '-') {
         validMoves[forwardRow][col] = true;
-
-        // Se estiver na linha inicial, pode andar 2 casas
         if (row == 6 && board[row - 2][col] == '-') {
           validMoves[row - 2][col] = true;
         }
       }
-
-      // Captura diagonal esquerda
       if (inBounds(forwardRow, col - 1) &&
           board[forwardRow][col - 1] != '-' &&
           isBlackPiece(board[forwardRow][col - 1])) {
         validMoves[forwardRow][col - 1] = true;
       }
-
-      // Captura diagonal direita
       if (inBounds(forwardRow, col + 1) &&
           board[forwardRow][col + 1] != '-' &&
           isBlackPiece(board[forwardRow][col + 1])) {
