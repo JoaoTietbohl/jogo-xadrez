@@ -1,68 +1,75 @@
 class ChessLogic {
- List<List<String>> board = [
-  ['🏯', '🐴', '🎓', '🤴', '♚', '🎓', '🐴', '🏯'], // pretas
-  ['🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️'],
-  ['-', '-', '-', '-', '-', '-', '-', '-'],
-  ['-', '-', '-', '-', '-', '-', '-', '-'],
-  ['-', '-', '-', '-', '-', '-', '-', '-'],
-  ['-', '-', '-', '-', '-', '-', '-', '-'],
-  ['⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️'],
-  ['🏰', '🐎', '🎩', '👸', '♔', '🎩', '🐎', '🏰'], // brancas
-];
-
+  List<List<String>> board = [
+    ['🏯', '🐴', '🎓', '🤴', '♚', '🎓', '🐴', '🏯'],
+    ['🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️', '🛡️'],
+    ['-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-'],
+    ['-', '-', '-', '-', '-', '-', '-', '-'],
+    ['⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️', '⚔️'],
+    ['🏰', '🐎', '🎩', '👸', '♔', '🎩', '🐎', '🏰'],
+  ];
 
   List<List<bool>> validMoves = List.generate(8, (_) => List.filled(8, false));
   int? selectedRow;
   int? selectedCol;
+  String? winner;
 
-  /// Trata o clique do usuário no tabuleiro
   bool handleTap(int row, int col, bool isWhiteTurn) {
-  if (selectedRow == null) {
-    if (board[row][col] != '-' &&
-        ((isWhiteTurn && isWhitePiece(board[row][col])) ||
-         (!isWhiteTurn && isBlackPiece(board[row][col])))) {
-      selectedRow = row;
-      selectedCol = col;
-      calculateValidMoves(row, col);
-    }
-  } else {
-    if (validMoves[row][col]) {
-      board[row][col] = board[selectedRow!][selectedCol!];
-      board[selectedRow!][selectedCol!] = '-';
-      selectedRow = null;
-      selectedCol = null;
-      validMoves = List.generate(8, (_) => List.filled(8, false));
-      return true; // jogada feita
-    } else {
-      selectedRow = null;
-      selectedCol = null;
-      validMoves = List.generate(8, (_) => List.filled(8, false));
-    }
-  }
-  return false; // nenhuma jogada feita
-}
+    if (winner != null) return false;
 
-  /// Verifica se a peça está selecionada
+    if (selectedRow == null) {
+      if (board[row][col] != '-' &&
+          ((isWhiteTurn && isWhitePiece(board[row][col])) ||
+              (!isWhiteTurn && isBlackPiece(board[row][col])))) {
+        selectedRow = row;
+        selectedCol = col;
+        calculateValidMoves(row, col);
+        removeMovesThatLeaveKingInCheck(isWhiteTurn);
+      }
+    } else {
+      if (validMoves[row][col]) {
+        String piece = board[selectedRow!][selectedCol!];
+        String captured = board[row][col];
+        board[row][col] = piece;
+        board[selectedRow!][selectedCol!] = '-';
+
+        selectedRow = null;
+        selectedCol = null;
+        validMoves = List.generate(8, (_) => List.filled(8, false));
+
+        if (captured == '♔') {
+          winner = 'Pretas venceram!';
+        } else if (captured == '♚') {
+          winner = 'Brancas venceram!';
+        }
+
+        return true;
+      } else {
+        selectedRow = null;
+        selectedCol = null;
+        validMoves = List.generate(8, (_) => List.filled(8, false));
+      }
+    }
+    return false;
+  }
+
   bool isSelected(int row, int col) {
     return selectedRow == row && selectedCol == col;
   }
 
-  /// Verifica se uma peça é branca
- bool isWhitePiece(String piece) {
-  return ['⚔️', '🏰', '🐎', '🎩', '👸', '♔'].contains(piece);
-}
+  bool isWhitePiece(String piece) {
+    return ['⚔️', '🏰', '🐎', '🎩', '👸', '♔'].contains(piece);
+  }
 
-bool isBlackPiece(String piece) {
-  return ['🛡️', '🏯', '🐴', '🎓', '🤴', '♚'].contains(piece);
-}
+  bool isBlackPiece(String piece) {
+    return ['🛡️', '🏯', '🐴', '🎓', '🤴', '♚'].contains(piece);
+  }
 
-
-  /// Verifica se posição está dentro do tabuleiro
   bool inBounds(int row, int col) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
   }
 
-  /// Calcula casas válidas para movimento da peça selecionada
   void calculateValidMoves(int row, int col) {
     validMoves = List.generate(8, (_) => List.filled(8, false));
     String piece = board[row][col];
@@ -79,43 +86,54 @@ bool isBlackPiece(String piece) {
       return false;
     }
 
-    // Torre 
-    if (piece == '🏰' || piece == '🏯') {
-      for (int r = row - 1; r >= 0; r--) {
-        if (board[r][col] == '-') {
-          validMoves[r][col] = true;
-        } else {
-          if (canMoveTo(r, col)) validMoves[r][col] = true;
-          break;
-        }
-      }
-      for (int r = row + 1; r < 8; r++) {
-        if (board[r][col] == '-') {
-          validMoves[r][col] = true;
-        } else {
-          if (canMoveTo(r, col)) validMoves[r][col] = true;
-          break;
-        }
-      }
-      for (int c = col - 1; c >= 0; c--) {
-        if (board[row][c] == '-') {
-          validMoves[row][c] = true;
-        } else {
-          if (canMoveTo(row, c)) validMoves[row][c] = true;
-          break;
-        }
-      }
-      for (int c = col + 1; c < 8; c++) {
-        if (board[row][c] == '-') {
-          validMoves[row][c] = true;
-        } else {
-          if (canMoveTo(row, c)) validMoves[row][c] = true;
-          break;
+    void addDirectionalMoves(List<List<int>> directions) {
+      for (var dir in directions) {
+        int dr = dir[0], dc = dir[1];
+        int r = row + dr, c = col + dc;
+        while (inBounds(r, c)) {
+          if (board[r][c] == '-') {
+            validMoves[r][c] = true;
+          } else {
+            if (canMoveTo(r, c)) validMoves[r][c] = true;
+            break;
+          }
+          r += dr;
+          c += dc;
         }
       }
     }
 
-    // Cavalo (🐎)
+    if (piece == '🏰' || piece == '🏯') {
+      addDirectionalMoves([
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1]
+      ]);
+    }
+
+    if (piece == '🎩' || piece == '🎓') {
+      addDirectionalMoves([
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1]
+      ]);
+    }
+
+    if (piece == '👸' || piece == '🤴') {
+      addDirectionalMoves([
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1]
+      ]);
+    }
+
     if (piece == '🐎' || piece == '🐴') {
       List<List<int>> moves = [
         [row - 2, col - 1],
@@ -135,111 +153,6 @@ bool isBlackPiece(String piece) {
       }
     }
 
-    // Bispo (🎩)
-    if (piece == '🎩' || piece == '🎓') {
-      for (int i = 1; row - i >= 0 && col + i < 8; i++) {
-        if (board[row - i][col + i] == '-') {
-          validMoves[row - i][col + i] = true;
-        } else {
-          if (canMoveTo(row - i, col + i)) validMoves[row - i][col + i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row - i >= 0 && col - i >= 0; i++) {
-        if (board[row - i][col - i] == '-') {
-          validMoves[row - i][col - i] = true;
-        } else {
-          if (canMoveTo(row - i, col - i)) validMoves[row - i][col - i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row + i < 8 && col + i < 8; i++) {
-        if (board[row + i][col + i] == '-') {
-          validMoves[row + i][col + i] = true;
-        } else {
-          if (canMoveTo(row + i, col + i)) validMoves[row + i][col + i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row + i < 8 && col - i >= 0; i++) {
-        if (board[row + i][col - i] == '-') {
-          validMoves[row + i][col - i] = true;
-        } else {
-          if (canMoveTo(row + i, col - i)) validMoves[row + i][col - i] = true;
-          break;
-        }
-      }
-    }
-
-    // Rainha (👸)
-    if (piece == '👸' || piece == '🤴') {
-      for (int r = row - 1; r >= 0; r--) {
-        if (board[r][col] == '-') {
-          validMoves[r][col] = true;
-        } else {
-          if (canMoveTo(r, col)) validMoves[r][col] = true;
-          break;
-        }
-      }
-      for (int r = row + 1; r < 8; r++) {
-        if (board[r][col] == '-') {
-          validMoves[r][col] = true;
-        } else {
-          if (canMoveTo(r, col)) validMoves[r][col] = true;
-          break;
-        }
-      }
-      for (int c = col - 1; c >= 0; c--) {
-        if (board[row][c] == '-') {
-          validMoves[row][c] = true;
-        } else {
-          if (canMoveTo(row, c)) validMoves[row][c] = true;
-          break;
-        }
-      }
-      for (int c = col + 1; c < 8; c++) {
-        if (board[row][c] == '-') {
-          validMoves[row][c] = true;
-        } else {
-          if (canMoveTo(row, c)) validMoves[row][c] = true;
-          break;
-        }
-      }
-      for (int i = 1; row - i >= 0 && col + i < 8; i++) {
-        if (board[row - i][col + i] == '-') {
-          validMoves[row - i][col + i] = true;
-        } else {
-          if (canMoveTo(row - i, col + i)) validMoves[row - i][col + i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row - i >= 0 && col - i >= 0; i++) {
-        if (board[row - i][col - i] == '-') {
-          validMoves[row - i][col - i] = true;
-        } else {
-          if (canMoveTo(row - i, col - i)) validMoves[row - i][col - i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row + i < 8 && col + i < 8; i++) {
-        if (board[row + i][col + i] == '-') {
-          validMoves[row + i][col + i] = true;
-        } else {
-          if (canMoveTo(row + i, col + i)) validMoves[row + i][col + i] = true;
-          break;
-        }
-      }
-      for (int i = 1; row + i < 8 && col - i >= 0; i++) {
-        if (board[row + i][col - i] == '-') {
-          validMoves[row + i][col - i] = true;
-        } else {
-          if (canMoveTo(row + i, col - i)) validMoves[row + i][col - i] = true;
-          break;
-        }
-      }
-    }
-
-    // Rei
     if (piece == '♔' || piece == '♚') {
       List<List<int>> moves = [
         [row - 1, col - 1],
@@ -259,7 +172,6 @@ bool isBlackPiece(String piece) {
       }
     }
 
-    // Peão preto (🛡️)
     if (piece == '🛡️') {
       int forwardRow = row + 1;
       if (inBounds(forwardRow, col) && board[forwardRow][col] == '-') {
@@ -269,18 +181,15 @@ bool isBlackPiece(String piece) {
         }
       }
       if (inBounds(forwardRow, col - 1) &&
-          board[forwardRow][col - 1] != '-' &&
           isWhitePiece(board[forwardRow][col - 1])) {
         validMoves[forwardRow][col - 1] = true;
       }
       if (inBounds(forwardRow, col + 1) &&
-          board[forwardRow][col + 1] != '-' &&
           isWhitePiece(board[forwardRow][col + 1])) {
         validMoves[forwardRow][col + 1] = true;
       }
     }
 
-    // Peão branco (⚔️)
     if (piece == '⚔️') {
       int forwardRow = row - 1;
       if (inBounds(forwardRow, col) && board[forwardRow][col] == '-') {
@@ -290,20 +199,64 @@ bool isBlackPiece(String piece) {
         }
       }
       if (inBounds(forwardRow, col - 1) &&
-          board[forwardRow][col - 1] != '-' &&
           isBlackPiece(board[forwardRow][col - 1])) {
         validMoves[forwardRow][col - 1] = true;
       }
       if (inBounds(forwardRow, col + 1) &&
-          board[forwardRow][col + 1] != '-' &&
           isBlackPiece(board[forwardRow][col + 1])) {
         validMoves[forwardRow][col + 1] = true;
       }
     }
   }
 
-  /// Acesso direto às jogadas válidas fora da classe
-  List<List<bool>> getValidMoves() {
-    return validMoves;
+  void removeMovesThatLeaveKingInCheck(bool isWhiteTurn) {
+    List<List<bool>> original = validMoves.map((row) => List.of(row)).toList();
+    List<List<bool>> filtered = List.generate(8, (_) => List.filled(8, false));
+    for (int r = 0; r < 8; r++) {
+      for (int c = 0; c < 8; c++) {
+        if (original[r][c]) {
+          String temp = board[r][c];
+          board[r][c] = board[selectedRow!][selectedCol!];
+          board[selectedRow!][selectedCol!] = '-';
+          bool stillSafe = !isInCheck(isWhiteTurn);
+          board[selectedRow!][selectedCol!] = board[r][c];
+          board[r][c] = temp;
+          if (stillSafe) {
+            filtered[r][c] = true;
+          }
+        }
+      }
+    }
+    validMoves = filtered;
   }
+
+  bool isInCheck(bool isWhiteTurn) {
+    String king = isWhiteTurn ? '♔' : '♚';
+    int kingRow = -1, kingCol = -1;
+    for (int r = 0; r < 8; r++) {
+      for (int c = 0; c < 8; c++) {
+        if (board[r][c] == king) {
+          kingRow = r;
+          kingCol = c;
+        }
+      }
+    }
+    if (kingRow == -1) return true;
+
+    for (int r = 0; r < 8; r++) {
+      for (int c = 0; c < 8; c++) {
+        String piece = board[r][c];
+        if ((isWhiteTurn && isBlackPiece(piece)) ||
+            (!isWhiteTurn && isWhitePiece(piece))) {
+          calculateValidMoves(r, c);
+          if (validMoves[kingRow][kingCol]) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  List<List<bool>> getValidMoves() => validMoves;
+
+  String? getWinner() => winner;
 }
