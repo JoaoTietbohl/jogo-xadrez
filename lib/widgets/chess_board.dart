@@ -34,25 +34,29 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 
   void handleTap(int row, int col) {
-    if (logic.getWinner() != null) return;
+    if (logic.gameOver) return;
 
     bool moved = logic.handleTap(row, col, turnManager.isWhiteTurn);
     if (moved) {
-      // Verifica se o jogo terminou após o movimento
-      final winner = logic.getWinner();
-      if (winner != null) {
-        showEndGameAlert(context, winner);
-      } else {
-        turnManager.switchTurn();
+      turnManager.switchTurn();
 
-        // Verifica se algum rei está em cheque
-        final checkStatus = checkKingsStatus(logic.board);
-        if (checkStatus['white'] == true) {
-          showCheckAlert(context, "⚠️ O rei branco está em cheque!");
-        }
-        if (checkStatus['black'] == true) {
-          showCheckAlert(context, "⚠️ O rei preto está em cheque!");
-        }
+      final bool isWhiteTurn = turnManager.isWhiteTurn;
+      final checkStatus = logic.isKingInCheck(isWhiteTurn);
+      final hasEscapeMoves = logic.playerHasLegalMoves(isWhiteTurn);
+
+      if (checkStatus && !hasEscapeMoves) {
+        // XEQUE-MATE
+        String winner = isWhiteTurn
+            ? "⚫ Pretas venceram!"
+            : "⚪ Brancas venceram!";
+        logic.winner = winner; // Isso já "finaliza" o jogo
+        showEndGameAlert(context, "♛ Xeque-mate! $winner");
+      } else if (checkStatus) {
+        String side = isWhiteTurn ? "branco" : "preto";
+        showCheckAlert(context, "⚠️ O rei $side está em cheque!");
+      } else if (!hasEscapeMoves) {
+        logic.winner = "🤝 Empate por afogamento! Nenhum movimento possível.";
+        showEndGameAlert(context, logic.winner!);
       }
     }
 
@@ -83,26 +87,19 @@ class _ChessBoardState extends State<ChessBoard> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Cronômetro e status do turno
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
             children: [
-              Text(
-                "⏱️ Brancas: ${turnManager.getFormattedTime(true)}",
-                style: const TextStyle(fontSize: 18),
-              ),
-              Text(
-                "⏱️ Pretas: ${turnManager.getFormattedTime(false)}",
-                style: const TextStyle(fontSize: 18),
-              ),
+              Text("⏱️ Brancas: ${turnManager.getFormattedTime(true)}"),
+              Text("⏱️ Pretas: ${turnManager.getFormattedTime(false)}"),
               const SizedBox(height: 10),
               Text(
-                logic.getWinner() != null
-                    ? "🏁 Fim de Jogo"
+                logic.gameOver
+                    ? logic.getWinner() ?? "🏁 Fim de Jogo"
                     : turnManager.isWhiteTurn
-                        ? "Vez das Brancas ⚪"
-                        : "Vez das Pretas ⚫",
+                    ? "Vez das Brancas ⚪"
+                    : "Vez das Pretas ⚫",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -112,7 +109,6 @@ class _ChessBoardState extends State<ChessBoard> {
           ),
         ),
 
-        // Tabuleiro
         Expanded(
           child: GridView.builder(
             itemCount: 64,
@@ -132,8 +128,8 @@ class _ChessBoardState extends State<ChessBoard> {
               Color color = isSelected
                   ? Colors.blue.withOpacity(0.5)
                   : canMoveHere
-                      ? Colors.green.withOpacity(0.5)
-                      : baseColor;
+                  ? Colors.green.withOpacity(0.5)
+                  : baseColor;
 
               return GestureDetector(
                 onTap: () => handleTap(row, col),
@@ -158,7 +154,7 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 }
 
-// Função auxiliar para detectar cheque
+// Função auxiliar para detectar cheque (opcional se for usar getWinner dentro de logic)
 Map<String, bool> checkKingsStatus(List<List<String>> board) {
   bool whiteInCheck = false;
   bool blackInCheck = false;
@@ -178,7 +174,6 @@ Map<String, bool> checkKingsStatus(List<List<String>> board) {
   }
 
   final logic = ChessLogic();
-
   logic.board = board;
 
   for (int r = 0; r < 8; r++) {
