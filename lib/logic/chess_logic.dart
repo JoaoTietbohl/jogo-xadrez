@@ -37,6 +37,9 @@ class ChessLogic {
         board[row][col] = piece;
         board[selectedRow!][selectedCol!] = '-';
 
+        // 👑 Verifica promoção
+        promotePawnIfNeeded();
+
         if (captured == '♔') {
           winner = 'Pretas venceram!';
         } else if (captured == '♚') {
@@ -50,6 +53,18 @@ class ChessLogic {
       }
     }
     return false;
+  }
+
+
+  void promotePawnIfNeeded() {
+    for (int col = 0; col < 8; col++) {
+      if (board[0][col] == '⚔️') {
+        board[0][col] = '👸'; // rainha peao branco
+      }
+      if (board[7][col] == '🛡️') {
+        board[7][col] = '🤴'; // preto
+      }
+    }
   }
 
   void clearSelection() {
