@@ -35,8 +35,6 @@ Esse projeto foi uma ótima oportunidade para:
 - Aprofundar conhecimentos em Flutter e Dart
 - Praticar organização de código em projetos maiores
 - Trabalhar com lógica de jogos
-- Aprender mais sobre o jogo de xadrez e suas regras
 
-## 🤝 Contribuições
 
-Sinta-se à vontade para abrir issues, sugerir melhorias ou enviar pull requests!
+
